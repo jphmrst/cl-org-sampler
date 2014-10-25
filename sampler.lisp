@@ -95,3 +95,35 @@
                  (write-symbol-files sym path))))
         (t (do-external-symbols (sym package)
              (write-symbol-files sym path)))))
+
+(defun write-packages (packages &key default-all default-system
+                                  (default-path "./")
+                                  (package-extension t) (extension-downcase t))
+  "Document several packages by making a call to =write-package-files= for each.
+The =packages= argument is a list giving a specification of the packages to be
+documented.  Each element can be either a package designator or a list whose
+first element is a package designator and other elements are keyword arguments
+accepted by =write-package-files=.  These keywords will be used for the call
+to =write-package-files= for that package.
+The =default-all=, =default-system=, and =default-path= arguments give the
+default arguments for the calls to =write-package-files=.
+If =package-extension= is non-nil (its default is =t=), then whenever a package
+spec does not give an explicit path, it should use a subdirectory of the default
+path whose name is taken from the package.  If =extension-downcase= is non-nil
+(its default is =t=), then the package name is converted to lower-case for this
+extension."
+  (iter (for package-spec in packages)
+        (when (symbolp package-spec)
+          (setf package-spec (list package-spec)))
+        (destructuring-bind (package &key (all default-all)
+                                          (system default-system)
+                                          (path default-path path-supp-p))
+            package-spec
+          (unless path-supp-p
+            (when package-extension
+              (let ((extension (package-name package)))
+                (when extension-downcase
+                  (setf extension (string-downcase extension)))
+                (setf path (merge-pathnames (concatenate 'string extension "/")
+                                            path)))))
+          (write-package-files package :all all :system system :path path))))
