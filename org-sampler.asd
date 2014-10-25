@@ -10,7 +10,7 @@
 (in-package :org-sampler-asd)
 
 (defsystem :org-sampler
-    :version "0.1.0"
+    :version "0.2.0"
     :depends-on (:iterate)
     :components ((:file "package")      ; Lisp infrastructure.
                  (:file "sampler" :depends-on ("package"))))
