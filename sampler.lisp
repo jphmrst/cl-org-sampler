@@ -54,6 +54,7 @@
       (when doc-string (format stream "~%~%  ~a~%~%" doc-string)))))
 
 (defun write-symbol-files (symbol directory-path &key always-disambiguate)
+  "Writes Org-mode files documenting the uses of the given =symbol=."
   (let* ((use-name (string-downcase (symbol-name symbol)))
          (is-fn (fboundp symbol))
          (is-type (find-class symbol nil))
@@ -86,6 +87,14 @@
                         directory-path)))))
 
 (defun write-package-files (package &key all system path)
+  "Documents a package by writing an Org file for each defined symbol.
+- The =package= argument should be a package specifier.
+- If the =all= keyword argument is given and is non-nil, then all symbols in
+  the package should be documented, instead of just exported symbols.
+- The =path= argument gives the directory where the files should be written.
+  This directory will be created if it does not exist.
+- A relative =path= is resolved relative to the location of the ASDF file
+  defining the given =system=."
   (unless path (setf path #p"./"))
   (when system (setf path (asdf:system-relative-pathname system path)))
 
