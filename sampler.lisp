@@ -187,6 +187,6 @@ extension."
             (format out "- ~a" name)
             (iter (for (usage path) in-hashtable (gethash name index-acc))
                   (for sep initially ":" then ",")
-                  (format out "~a [[file:~a][~a]]" sep path usage))
+                  (format out "~a [[file:~a][~s]]" sep path usage))
             (format out ".~%"))))
   (values))
