@@ -7,39 +7,6 @@
 (defvar *generate-html* t
   "If non-nil, then an HTML file should be generated from each Org file.")
 
-;;;(defun write-fn-file (sym path)
-;;;  (with-open-file (stream path :direction :output :if-exists :supersede)
-;;;    (format stream "# ~a~%#+TITLE: Function =~a=~%" *no-edit-message* sym)
-;;;
-;;;    (let ((fn (symbol-function sym))
-;;;          (doc-string (documentation sym 'function)))
-;;;
-;;;      (iter (for i from (length doc-string) downto 1)
-;;;            (when (eql (aref doc-string (- i 1)) #\Newline)
-;;;              (setf doc-string (concatenate 'string (subseq doc-string 0 i)
-;;;                                            "  " (subseq doc-string i)))))
-;;;
-;;;      (cond
-;;;        ((typep (symbol-function sym) 'generic-function)
-;;;         (flet ((gfll (fn)
-;;;                  #+allegro (mop:generic-function-lambda-list fn)
-;;;                  #+sbcl (sb-mop:generic-function-lambda-list fn)
-;;;                  #-(or allegro sbcl)
-;;;                  (error "Don't know how to call the MOP on this Lisp")))
-;;;           (let ((fn-call (format nil "(~a~{ ~a~})" sym (gfll fn))))
-;;;             (format stream "=~a= ~a~%  #+BEGIN_LATEX~%  \\hspace*{\\fill}~%  #+END_LATEX~%  /Generic function/"
-;;;               fn-call (cond ((> (length fn-call) 42) "\\\\") (t ""))))))
-;;;        (t
-;;;         (let (#|(fn-call (symbol-name sym))|#)
-;;;           (format stream "- Package =~a="
-;;;             (cond
-;;;               ((special-operator-p sym) "Special operator")
-;;;               ((macro-function sym) "Macro")
-;;;               (t "Function"))
-;;;             (package-name (symbol-package sym))))))
-;;;      (when doc-string
-;;;        (format stream "~%~%~a~%~%" doc-string)))))
-
 (defun write-org-file (sym path typ)
   (with-open-file (stream path :direction :output :if-exists :supersede)
     (format stream "# ~a~%" *no-edit-message*)
@@ -74,7 +41,9 @@
 
 (defun write-symbol-files (symbol directory-path
                            &key index-acc always-disambiguate)
-  "Writes Org-mode files documenting the uses of the given =symbol=."
+  "Writes Org-mode files (in the directory named by =directory-path=) documenting the uses of the given =symbol=.
+- The =index-acc= is a hash-table used to accumulate symbol references for an index page, or =nil= if no index data should be saved.
+- This function will write a separate file for each /use/ of the symbol, disambiguating the file name where necessary with =__fn=, =__var= and so forth.  If =always-disambiguate= is non-nil, then these suffixes will /always/ be added to the names of the generated files, even when a symbol has only one usage."
   (let* ((use-name (string-downcase (symbol-name symbol)))
          (is-fn (fboundp symbol))
          (is-type (find-class symbol nil))
@@ -123,7 +92,21 @@
 - The =path= argument gives the directory where the files should be written.
   This directory will be created if it does not exist.
 - A relative =path= is resolved relative to the location of the ASDF file
-  defining the given =system=."
+  defining the given =system=.
+- When this function is called by another function in this package, =index-acc=
+  will be a hash-table used to accumulate symbol references for the index that
+  page will create.  When this function is called as an API from outside of this
+  system, or if no index will be needed, then the argument should be left =nil=.
+- The =show-package=, =hoist-exported=, and =page-title= keyword arguments
+  direct the formatting of the index page which this routine should create when
+  it is the entry call to this package.
+  - If =show-package= is non-nil, then the symbol's package name will be
+    dsplayed on any index page.
+  - If =hoist-exported= in non-nil, then the list of symbols will be divided
+    according to the package which exports each symbol, or by internal symbols
+    of all packages.
+  - If non-nil, =page-title= should be a string to be used as the page name."
+  (format t "Path ~s~%" path)
   (unless path (setf path #p"./"))
   (when system (setf path (asdf:system-relative-pathname system path)))
 
@@ -136,7 +119,7 @@
                (write-symbol-files sym path :index-acc index-acc)))))
   (when (and *index-writer* index)
     (format t "Writing index for package.~%")
-    (write-index-org index-acc path index keyargs
+    (write-index-org index-acc path index
                      :show-package show-package :hoist-exported hoist-exported
                      :title page-title)))
 
@@ -148,18 +131,29 @@
                          (index-acc (make-hash-table :test 'eq))
                          show-package hoist-exported page-title)
   "Document several packages by making a call to =write-package-files= for each.
-The =packages= argument is a list giving a specification of the packages to be
-documented.  Each element can be either a package designator or a list whose
-first element is a package designator and other elements are keyword arguments
-accepted by =write-package-files=.  These keywords will be used for the call
-to =write-package-files= for that package.
-The =default-all=, =default-system=, and =default-path= arguments give the
-default arguments for the calls to =write-package-files=.
-If =package-extension= is non-nil (its default is =t=), then whenever a package
-spec does not give an explicit path, it should use a subdirectory of the default
-path whose name is taken from the package.  If =extension-downcase= is non-nil
-\(its default is =t=), then the package name is converted to lower-case for this
-extension."
+- The =packages= argument is a list giving a specification of the packages to be
+  documented.  Each element can be either a package designator or a list whose
+  first element is a package designator and other elements are keyword arguments
+  accepted by =write-package-files=.  These keywords will be used for the call
+  to =write-package-files= for that package.
+- The =default-all=, =default-system=, and =default-path= arguments give the
+  default arguments for the calls to =write-package-files=.
+- If =package-extension= is non-nil (its default is =t=), then whenever a
+  package spec does not give an explicit path, it should use a subdirectory of
+  the default path whose name is taken from the package.  If
+  =extension-downcase= is non-nil \(its default is =t=), then the package name
+  is converted to lower-case for this extension.
+- The =index-acc= is a hash-table used to accumulate symbol references for an
+  index page, or =nil= if no index data should be saved.
+- The =show-package=, =hoist-exported=, and =page-title= keyword arguments
+  direct the formatting of the index page which this routine should create when
+  it is the entry call to this package.
+  - If =show-package= is non-nil, then the symbol's package name will be
+    dsplayed on any index page.
+  - If =hoist-exported= in non-nil, then the list of symbols will be divided
+    according to the package which exports each symbol, or by internal symbols
+    of all packages.
+  - If non-nil, =page-title= should be a string to be used as the page name."
   (let ((*index-writer* nil))
     (iter (for package-spec in packages)
           (when (symbolp package-spec)
@@ -205,6 +199,15 @@ extension."
 
 (defun write-index-org (index-acc directory-path index-file-name
                         &key show-package hoist-exported title)
+  "Write the accumulated indexing information to its own Org file.
+- The =show-package=, =hoist-exported=, and =page-title= keyword arguments
+  direct the formatting of the index page.
+  - If =show-package= is non-nil, then a symbol's package name will be
+    dsplayed in its list entry.
+  - If =hoist-exported= in non-nil, then the list of symbols will be divided
+    according to the package which exports each symbol, or by internal symbols
+    of all packages.
+  - If non-nil, =page-title= should be a string to be used as the page name."
   (unless (stringp index-file-name) (setf index-file-name "index"))
   (let* ((package-hash (make-hash-table :test 'eq))
          (path (merge-pathnames (concatenate 'string index-file-name ".org")
@@ -234,8 +237,9 @@ extension."
                            (finally
                             (when sectioned (format out "* Internal names~%"))
                             (let ((last-evals
-                                   (write-names-list out names show-package
-                                                     index-acc)))
+                                   (when names
+                                     (write-names-list out names show-package
+                                                       index-acc))))
                               (when *generate-html*
                                 (asdf:run-shell-command "emacs~{~a~} --eval '(find-file \"~a/index.org\")' --eval '(org-html-export-to-html)' --eval '(save-buffers-kill-terminal)'" (append evals last-evals) directory-path)))))))))
   (values))
@@ -255,3 +259,10 @@ extension."
               (finally (format out "~a" fin)))
         (format out ".~%")
         (finally (return-from write-names-list evals))))
+
+(defun self-document ()
+  "Applies =Org-Sampler= to itself in its own directory."
+  (let ((path (asdf:system-relative-pathname :org-sampler "doc/")))
+    (write-package-files :org-sampler :path path :index "index.org"
+                         :show-package nil :hoist-exported t
+                         :page-title "Org-Sampler")))

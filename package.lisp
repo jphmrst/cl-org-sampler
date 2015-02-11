@@ -9,4 +9,4 @@
 (defpackage :org-sampler
     (:use :common-lisp :iterate)
     (:export #:write-symbol-files #:write-package-files #:write-packages
-             #:*generate-html*))
+             #:*generate-html* #:self-document))
