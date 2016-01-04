@@ -1,0 +1,1 @@
+Utilities for interfacing org-mode documentation of Common Lisp projects with in-code documentation written with org-mode markup.
