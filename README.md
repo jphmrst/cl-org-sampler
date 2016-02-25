@@ -7,6 +7,21 @@
 
 Documents a package by writing an Org file for each defined symbol.
 
+    (write-package-files PACKAGE
+                         [ :all FLAG ]
+                         [ :system ASDF-SYSTEM-NAME ]
+                         [ :path DIR ]
+                         [ :index FLAG ]
+                         [ :index-acc HASH-OR-NIL ]
+                         [ :show-package FLAG ]
+                         [ :hoist-exported FLAG ]
+                         [ :page-title STRNIG ]
+                         [ :always-disambiguate FLAG ]
+                         [ :section-level NUMBER-OR-NIL ]
+                         [ :package-headers FLAG ]
+                         [ :usage-headers FLAG ]
+                         [ :show-title FLAG ] )
+
 -   The `package` argument should be a package specifier.
 -   If the `all` keyword argument is given and is non-nil, then all symbols in
     the package should be documented, instead of just exported symbols.
@@ -31,6 +46,21 @@ Documents a package by writing an Org file for each defined symbol.
 ### Function `write-packages`
 
 Document several packages by making a call to `write-package-files` for each.
+
+    (write-packages PACKAGES
+                    [ :default-all FLAG ]
+                    [ :default-system ASDF-SYSTEM-NAME ]
+                    [ :default-path DIR ]
+                    [ :package-extension FLAG ]
+                    [ :extension-downcase FLAG ]
+                    [ :index FLAG ]
+                    [ :index-system ASDF-SYSTEM-NAME ]
+                    [ :index-acc HASH-TABLE ]
+                    [ :show-package FLAG ]
+                    [ :hoist-exported page-title FLAG ]
+                    [ :show-title FLAG ]
+                    [ :package-headers FLAG ]
+                    [ :usage-headers FLAG ] )
 
 -   The `packages` argument is a list giving a specification of the packages to be
     documented.  Each element can be either a package designator or a list whose
@@ -59,6 +89,9 @@ Document several packages by making a call to `write-package-files` for each.
 ### Function `write-symbol-files`
 
 Writes Org-mode files (in the directory named by `directory-path`) documenting the uses of the given `symbol`.
+
+    (write-symbol-files SYMBOL DIRECTORY-PATH
+      [ :index-acc HASH ] [ :always-disambiguate FLAG ] )
 
 -   The `index-acc` is a hash-table used to accumulate symbol references for an index page, or `nil` if no index data should be saved.
 -   This function will write a separate file for each *use* of the symbol, disambiguating the file name where necessary with `__fn`, `__var` and so forth.  If `always-disambiguate` is non-nil, then these suffixes will *always* be added to the names of the generated files, even when a symbol has only one usage.

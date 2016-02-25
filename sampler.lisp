@@ -59,6 +59,10 @@
 (defun write-symbol-files (symbol directory-path
                            &key index-acc always-disambiguate)
   "Writes Org-mode files (in the directory named by =directory-path=) documenting the uses of the given =symbol=.
+#+begin_example
+\(write-symbol-files SYMBOL DIRECTORY-PATH
+  [ :index-acc HASH ] [ :always-disambiguate FLAG ] )
+#+end_example
 - The =index-acc= is a hash-table used to accumulate symbol references for an index page, or =nil= if no index data should be saved.
 - This function will write a separate file for each /use/ of the symbol, disambiguating the file name where necessary with =__fn=, =__var= and so forth.  If =always-disambiguate= is non-nil, then these suffixes will /always/ be added to the names of the generated files, even when a symbol has only one usage."
   (let* ((use-name (string-downcase (symbol-name symbol)))
@@ -108,6 +112,22 @@
                               (usage-headers *show-usage-header*)
                               (show-title *show-title*))
   "Documents a package by writing an Org file for each defined symbol.
+#+begin_example
+(write-package-files PACKAGE
+                     [ :all FLAG ]
+                     [ :system ASDF-SYSTEM-NAME ]
+                     [ :path DIR ]
+                     [ :index FLAG ]
+                     [ :index-acc HASH-OR-NIL ]
+                     [ :show-package FLAG ]
+                     [ :hoist-exported FLAG ]
+                     [ :page-title STRNIG ]
+                     [ :always-disambiguate FLAG ]
+                     [ :section-level NUMBER-OR-NIL ]
+                     [ :package-headers FLAG ]
+                     [ :usage-headers FLAG ]
+                     [ :show-title FLAG ] )
+#+end_example
 - The =package= argument should be a package specifier.
 - If the =all= keyword argument is given and is non-nil, then all symbols in
   the package should be documented, instead of just exported symbols.
@@ -161,6 +181,22 @@
                          (package-headers *show-package-header*)
                          (usage-headers *show-usage-header*))
   "Document several packages by making a call to =write-package-files= for each.
+#+begin_example
+(write-packages PACKAGES
+                [ :default-all FLAG ]
+                [ :default-system ASDF-SYSTEM-NAME ]
+                [ :default-path DIR ]
+                [ :package-extension FLAG ]
+                [ :extension-downcase FLAG ]
+                [ :index FLAG ]
+                [ :index-system ASDF-SYSTEM-NAME ]
+                [ :index-acc HASH-TABLE ]
+                [ :show-package FLAG ]
+                [ :hoist-exported page-title FLAG ]
+                [ :show-title FLAG ]
+                [ :package-headers FLAG ]
+                [ :usage-headers FLAG ] )
+#+end_example
 - The =packages= argument is a list giving a specification of the packages to be
   documented.  Each element can be either a package designator or a list whose
   first element is a package designator and other elements are keyword arguments
