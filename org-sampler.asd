@@ -13,6 +13,8 @@
 
 (defsystem :org-sampler
     :version "0.2.0"
+    :author "John Maraist <lisper@maraist.org>"
+    :license "LLGPL 3.latest"
     :depends-on (:iterate)
     :components ((:file "package")      ; Lisp infrastructure.
                  (:file "sampler" :depends-on ("package"))))
