@@ -1,20 +1,7 @@
-- [Main routines](#main-routines)
-  - [Function `write-package-files`](#function-`write-package-files`)
-  - [Function `write-packages`](#function-`write-packages`)
-  - [Function `write-symbol-files`](#function-`write-symbol-files`)
-- [Global switches](#global-switches)
-  - [Variable `*section-level*`](#variable-`*section-level*`)
-  - [Variable `*show-package-header*`](#variable-`*show-package-header*`)
-  - [Variable `*show-title*`](#variable-`*show-title*`)
-  - [Variable `*show-usage-header*`](#variable-`*show-usage-header*`)
-  - [Variable `*generate-html*`](#variable-`*generate-html*`)
-- [Self-documentation](#self-documentation)
-  - [Function `self-document`](#function-`self-document`)
 
+# Main routines
 
-# Main routines<a id="orgheadline4"></a>
-
-## Function `write-package-files`<a id="orgheadline1"></a>
+## Function `write-package-files`
 
 Documents a package by writing an Org file for each defined symbol.
 
@@ -39,7 +26,7 @@ Documents a package by writing an Org file for each defined symbol.
         of all packages.
     -   If non-nil, `page-title` should be a string to be used as the page name.
 
-## Function `write-packages`<a id="orgheadline2"></a>
+## Function `write-packages`
 
 Document several packages by making a call to `write-package-files` for each.
 
@@ -67,37 +54,37 @@ Document several packages by making a call to `write-package-files` for each.
         of all packages.
     -   If non-nil, `page-title` should be a string to be used as the page name.
 
-## Function `write-symbol-files`<a id="orgheadline3"></a>
+## Function `write-symbol-files`
 
 Writes Org-mode files (in the directory named by `directory-path`) documenting the uses of the given `symbol`.
 
 -   The `index-acc` is a hash-table used to accumulate symbol references for an index page, or `nil` if no index data should be saved.
 -   This function will write a separate file for each *use* of the symbol, disambiguating the file name where necessary with `__fn`, `__var` and so forth.  If `always-disambiguate` is non-nil, then these suffixes will *always* be added to the names of the generated files, even when a symbol has only one usage.
 
-# Global switches<a id="orgheadline10"></a>
+# Global switches
 
-## Variable `*section-level*`<a id="orgheadline5"></a>
+## Variable `*section-level*`
 
 If non-nil, then generated Org mode with begin with the indicated level of section header giving the name and use of the definition. If `nil`, no section header is generated.
 
-## Variable `*show-package-header*`<a id="orgheadline6"></a>
+## Variable `*show-package-header*`
 
 Whether a header line for the package should be written.
 
-## Variable `*show-title*`<a id="orgheadline7"></a>
+## Variable `*show-title*`
 
 Whether an initial comment with the title should be written.
 
-## Variable `*show-usage-header*`<a id="orgheadline8"></a>
+## Variable `*show-usage-header*`
 
 Whether a header line for the usage should be written.
 
-## Variable `*generate-html*`<a id="orgheadline9"></a>
+## Variable `*generate-html*`
 
 If non-nil, then an HTML file should be generated from each Org file.
 
-# Self-documentation<a id="orgheadline12"></a>
+# Self-documentation
 
-## Function `self-document`<a id="orgheadline11"></a>
+## Function `self-document`
 
 Applies `Org-Sampler` to itself in its own directory.

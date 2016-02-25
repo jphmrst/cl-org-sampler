@@ -1,4 +1,5 @@
 #+TITLE: Org-Sampler - Treat Common Lisp docstrings as Org-mode
+#+OPTIONS: toc:nil
 
 * Main routines
 #+INCLUDE: "./doc/write-package-files.org"
