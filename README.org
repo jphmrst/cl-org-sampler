@@ -1,0 +1,14 @@
+#+TITLE: Org-Sampler - Treat Common Lisp docstrings as Org-mode
+
+* Main routines
+#+INCLUDE: "./doc/write-package-files.org"
+#+INCLUDE: "./doc/write-packages.org"
+#+INCLUDE: "./doc/write-symbol-files.org"
+* Global switches
+#+INCLUDE: "./doc/_section-level_.org"
+#+INCLUDE: "./doc/_show-package-header_.org"
+#+INCLUDE: "./doc/_show-title_.org"
+#+INCLUDE: "./doc/_show-usage-header_.org"
+#+INCLUDE: "./doc/_generate-html_.org"
+* Self-documentation
+#+INCLUDE: "./doc/self-document.org"

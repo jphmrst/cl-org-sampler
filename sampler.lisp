@@ -4,8 +4,17 @@
   "Message printed at the top of ")
 (defvar *index-writer* t
   "Should be left as =t=: used to indicate which outermost function API call should invoke =write-index-org=.")
-(defvar *generate-html* t
+
+(defparameter *generate-html* t
   "If non-nil, then an HTML file should be generated from each Org file.")
+(defparameter *show-usage-header* t
+  "Whether a header line for the usage should be written.")
+(defparameter *show-package-header* t
+  "Whether a header line for the package should be written.")
+(defparameter *show-title* t
+  "Whether an initial comment with the title should be written.")
+(defparameter *section-level* nil
+  "If non-nil, then generated Org mode with begin with the indicated level of section header giving the name and use of the definition. If =nil=, no section header is generated.")
 
 (defun write-org-file (sym path typ)
   (with-open-file (stream path :direction :output :if-exists :supersede)
@@ -30,14 +39,22 @@
                             (error "Don't know how to call the MOP")))
                      (format nil "(~a~{ ~a~})"
                        sym (gfll (symbol-function sym)))))))
-
-      (format stream "#+TITLE: ~a =~a=~%" type-name sym)
+      (when *show-title*
+        (format stream "#+TITLE: ~a =~a=~%" type-name sym))
+      (when (and *section-level*
+                 (numberp *section-level*) (> *section-level* 0))
+        (iter (for i from 0 below *section-level*)
+              (format stream "*"))
+        (format stream " ~a =~a=~%" type-name sym))
       (cond
-        (usage (format stream "- Package =~a=~%- Usage =~a=~%"
-                 (package-name (symbol-package sym)) usage))
-        (t (format stream "Package =~a=~%"
-             (package-name (symbol-package sym)))))
-      (when doc-string (format stream "~%~a~%~%" doc-string)))))
+        ((and usage *show-usage-header* *show-package-header*)
+         (format stream "- Package =~a=~%- Usage =~a=~%"
+           (package-name (symbol-package sym)) usage))
+        ((and *show-package-header*)
+         (format stream "Package =~a=~%~%" (package-name (symbol-package sym))))
+        ((and usage *show-usage-header*)
+         (format stream "Usage =~a=~%~%" usage)))
+      (when doc-string (format stream "~a~%~%" doc-string)))))
 
 (defun write-symbol-files (symbol directory-path
                            &key index-acc always-disambiguate)
@@ -84,7 +101,12 @@
 (defun write-package-files (package &rest keyargs
                             &key all system path index
                               (index-acc (make-hash-table :test 'eq))
-                              show-package hoist-exported page-title)
+                              show-package hoist-exported page-title
+                              always-disambiguate
+                              (section-level *section-level*)
+                              (package-headers *show-package-header*)
+                              (usage-headers *show-usage-header*)
+                              (show-title *show-title*))
   "Documents a package by writing an Org file for each defined symbol.
 - The =package= argument should be a package specifier.
 - If the =all= keyword argument is given and is non-nil, then all symbols in
@@ -111,17 +133,22 @@
   (when system (setf path (asdf:system-relative-pathname system path)))
 
   (ensure-directories-exist path)
-  (let ((*index-writer* nil))
+  (let ((*index-writer* nil)
+        (*section-level* section-level)
+        (*show-title* show-title)
+        (*show-usage-header* package-headers)
+        (*show-package-header* usage-headers))
     (cond (all (do-symbols (sym package)
                  (when (eq (symbol-package sym) (find-package package))
                    (write-symbol-files sym path :index-acc index-acc))))
           (t (do-external-symbols (sym package)
-               (write-symbol-files sym path :index-acc index-acc)))))
-  (when (and *index-writer* index)
-    (format t "Writing index for package.~%")
-    (write-index-org index-acc path index
-                     :show-package show-package :hoist-exported hoist-exported
-                     :title page-title)))
+               (write-symbol-files sym path :index-acc index-acc))))
+    (when (and *index-writer* index)
+      (format t "Writing index for package.~%")
+      (write-index-org index-acc path index
+                       :show-package show-package :hoist-exported hoist-exported
+                       :title page-title
+                       :always-disambiguate always-disambiguate))))
 
 (defun write-packages (packages &rest keyargs
                        &key default-all default-system
@@ -129,7 +156,10 @@
                             (package-extension t) (extension-downcase t)
                             index (index-system default-system)
                          (index-acc (make-hash-table :test 'eq))
-                         show-package hoist-exported page-title)
+                         show-package hoist-exported page-title
+                         (show-title *show-title*)
+                         (package-headers *show-package-header*)
+                         (usage-headers *show-usage-header*))
   "Document several packages by making a call to =write-package-files= for each.
 - The =packages= argument is a list giving a specification of the packages to be
   documented.  Each element can be either a package designator or a list whose
@@ -154,7 +184,10 @@
     according to the package which exports each symbol, or by internal symbols
     of all packages.
   - If non-nil, =page-title= should be a string to be used as the page name."
-  (let ((*index-writer* nil))
+  (let ((*index-writer* nil)
+        (*show-title* show-title)
+        (*show-usage-header* package-headers)
+        (*show-package-header* usage-headers))
     (iter (for package-spec in packages)
           (when (symbolp package-spec)
             (setf package-spec (list package-spec)))
@@ -264,5 +297,6 @@
   "Applies =Org-Sampler= to itself in its own directory."
   (let ((path (asdf:system-relative-pathname :org-sampler "doc/")))
     (write-package-files :org-sampler :path path :index "index.org"
-                         :show-package nil :hoist-exported t
+                         :show-package nil :hoist-exported t :section-level 2
+                         :package-headers nil :usage-headers nil :show-title nil
                          :page-title "Org-Sampler")))

@@ -6,7 +6,9 @@
 ;;; File: org-sampler.asd
 ;;;
 
-(defpackage :org-sampler-asd (:use :common-lisp :asdf))
+(defpackage :org-sampler-asd
+    (:use :common-lisp :asdf)
+    (:export #:samples))
 (in-package :org-sampler-asd)
 
 (defsystem :org-sampler
@@ -14,4 +16,3 @@
     :depends-on (:iterate)
     :components ((:file "package")      ; Lisp infrastructure.
                  (:file "sampler" :depends-on ("package"))))
-
