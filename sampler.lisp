@@ -15,6 +15,14 @@
   "Whether an initial comment with the title should be written.")
 (defparameter *section-level* nil
   "If non-nil, then generated Org mode with begin with the indicated level of section header giving the name and use of the definition. If =nil=, no section header is generated.")
+(defparameter *latex-label-suffix* nil
+  "If non-nil, then a LaTeX label definition will be generated for each symbol
+with the given suffix.")
+
+(defvar *standard-doctype-alist*
+    '((function . "fn") (type . "type") (variable . "variable"))
+  "Association list from symbols naming a =doc-type= to the string used to
+disambiguate the generated files when needed.")
 
 (defun write-org-file (sym path typ)
   (with-open-file (stream path :direction :output :if-exists :supersede)
@@ -28,8 +36,9 @@
                           ((macro-function sym) "Macro")
                           (t "Function")))
                        ((variable) (if (constantp sym) "Constant" "Variable"))
-                       ((type)     "Type")))
-          (doc-string (documentation sym typ))
+                       ((type)     "Type")
+                       (otherwise (string-capitalize (symbol-name typ)))))
+          (doc-string (documentation* sym typ))
           (usage (when (and (eq typ 'function) (fboundp sym)
                             (typep (symbol-function sym) 'generic-function))
                    (flet ((gfll (fn)
@@ -41,6 +50,8 @@
                        sym (gfll (symbol-function sym)))))))
       (when *show-title*
         (format stream "#+TITLE: ~a =~a=~%" type-name sym))
+      (when *latex-label-suffix*
+        (format stream "#+LaTeX: \\label{~a~a}~%" sym *latex-label-suffix*))
       (when (and *section-level*
                  (numberp *section-level*) (> *section-level* 0))
         (iter (for i from 0 below *section-level*)
@@ -57,7 +68,8 @@
       (when doc-string (format stream "~a~%~%" doc-string)))))
 
 (defun write-symbol-files (symbol directory-path
-                           &key index-acc always-disambiguate)
+                           &key index-acc always-disambiguate
+                                (types *standard-doctype-alist*))
   "Writes Org-mode files (in the directory named by =directory-path=) documenting the uses of the given =symbol=.
 #+begin_example
 \(write-symbol-files SYMBOL DIRECTORY-PATH
@@ -66,11 +78,9 @@
 - The =index-acc= is a hash-table used to accumulate symbol references for an index page, or =nil= if no index data should be saved.
 - This function will write a separate file for each /use/ of the symbol, disambiguating the file name where necessary with =__fn=, =__var= and so forth.  If =always-disambiguate= is non-nil, then these suffixes will /always/ be added to the names of the generated files, even when a symbol has only one usage."
   (let* ((use-name (string-downcase (symbol-name symbol)))
-         (is-fn (fboundp symbol))
-         (is-type (find-class symbol nil))
-         (is-variable (boundp symbol))
-         (uses (iter (for bool in (list is-fn is-type is-variable))
-                     (when bool (summing 1))))
+         (uses (iter (for (typ . suffix) in types)
+                     (declare (ignore suffix))
+                     (when (documentation* symbol typ) (summing 1))))
          (disambiguate (or always-disambiguate (> uses 1))))
 
     (iter (for i from 0 below (length use-name))
@@ -78,42 +88,31 @@
                     (eql (aref use-name i) #\*))
             (setf (aref use-name i) #\_)))
 
-    (when is-fn
-      (let ((path (merge-pathnames (concatenate 'string
-                                     use-name (if disambiguate "__fn" "")
-                                     ".org")
-                                   directory-path)))
-        (write-org-file symbol path 'function)
-        (when index-acc (set-index-usage index-acc symbol :fn path))))
-
-    (when is-type
-      (let ((path (merge-pathnames
-                   (concatenate 'string
-                     use-name (if disambiguate "__type" "") ".org")
-                   directory-path)))
-        (write-org-file symbol path 'type)
-        (when index-acc (set-index-usage index-acc symbol :type path))))
-
-    (when is-variable
-      (let ((path (merge-pathnames
-                   (concatenate 'string
-                     use-name (if disambiguate "__variable" "") ".org")
-                   directory-path)))
-        (write-org-file symbol path 'variable)
-        (when index-acc (set-index-usage index-acc symbol :variable path))))))
+    (iter (for (typ . suffix) in types)
+          (when (documentation* symbol typ)
+            (let ((path
+                   (merge-pathnames (if disambiguate
+                                      (concatenate 'string
+                                        use-name "__" suffix ".org")
+                                      (concatenate 'string use-name ".org"))
+                                    directory-path)))
+              (write-org-file symbol path typ)
+              (when index-acc (set-index-usage index-acc symbol :fn path)))))))
 
 (defun write-package-files (package &rest keyargs
                             &key all system path index
+                              (types *standard-doctype-alist*)
                               (index-acc (make-hash-table :test 'eq))
                               show-package hoist-exported page-title
                               always-disambiguate
                               (section-level *section-level*)
                               (package-headers *show-package-header*)
                               (usage-headers *show-usage-header*)
-                              (show-title *show-title*))
+                              (show-title *show-title*)
+                              (latex-label-suffix *latex-label-suffix*))
   "Documents a package by writing an Org file for each defined symbol.
 #+begin_example
-(write-package-files PACKAGE
+\(write-package-files PACKAGE
                      [ :all FLAG ]
                      [ :system ASDF-SYSTEM-NAME ]
                      [ :path DIR ]
@@ -157,12 +156,16 @@
         (*section-level* section-level)
         (*show-title* show-title)
         (*show-usage-header* package-headers)
-        (*show-package-header* usage-headers))
+        (*show-package-header* usage-headers)
+        (*standard-doctype-alist* types)
+        (*latex-label-suffix* latex-label-suffix))
     (cond (all (do-symbols (sym package)
                  (when (eq (symbol-package sym) (find-package package))
-                   (write-symbol-files sym path :index-acc index-acc))))
+                   (write-symbol-files sym path :index-acc index-acc
+                                       :always-disambiguate always-disambiguate))))
           (t (do-external-symbols (sym package)
-               (write-symbol-files sym path :index-acc index-acc))))
+               (write-symbol-files sym path :index-acc index-acc
+                                   :always-disambiguate always-disambiguate))))
     (when (and *index-writer* index)
       (format t "Writing index for package.~%")
       (write-index-org index-acc path index
@@ -172,17 +175,21 @@
 
 (defun write-packages (packages &rest keyargs
                        &key default-all default-system
-                            (default-path "./")
-                            (package-extension t) (extension-downcase t)
-                            index (index-system default-system)
+                         (default-path "./")
+                         (package-extension t) (extension-downcase t)
+                         index (index-system default-system)
+                         (types *standard-doctype-alist*)
+                         always-disambiguate
                          (index-acc (make-hash-table :test 'eq))
                          show-package hoist-exported page-title
+                         (section-level *section-level*)
                          (show-title *show-title*)
                          (package-headers *show-package-header*)
-                         (usage-headers *show-usage-header*))
+                         (usage-headers *show-usage-header*)
+                         (latex-label-suffix *latex-label-suffix*))
   "Document several packages by making a call to =write-package-files= for each.
 #+begin_example
-(write-packages PACKAGES
+\(write-packages PACKAGES
                 [ :default-all FLAG ]
                 [ :default-system ASDF-SYSTEM-NAME ]
                 [ :default-path DIR ]
@@ -221,9 +228,12 @@
     of all packages.
   - If non-nil, =page-title= should be a string to be used as the page name."
   (let ((*index-writer* nil)
+        (*section-level* section-level)
         (*show-title* show-title)
         (*show-usage-header* package-headers)
-        (*show-package-header* usage-headers))
+        (*show-package-header* usage-headers)
+        (*standard-doctype-alist* types)
+        (*latex-label-suffix* latex-label-suffix))
     (iter (for package-spec in packages)
           (when (symbolp package-spec)
             (setf package-spec (list package-spec)))
@@ -243,7 +253,8 @@
                                                path)))))
               (t (setf path (merge-pathnames subdir path))))
             (write-package-files package :all all :system system :path path
-                                 :index-acc index-acc))))
+                                 :index-acc index-acc
+                                 :always-disambiguate always-disambiguate))))
   (when (and *index-writer* index)
     (format t "Writing index for packages.~%")
     (write-index-org index-acc
@@ -329,6 +340,61 @@
         (format out ".~%")
         (finally (return-from write-names-list evals))))
 
+;;; -----------------------------------------------------------------
+
+#-allegro (defvar +nonstandard-doc-type+ (make-hash-table :test 'eq)
+            "Hash table for non-standard documentation types.")
+
+#+allegro (declaim (inline documentation*))
+(defun documentation* (x doc-type)
+  "Sometimes you may want to maintain documentation attached to
+non-standard targets in the source code, and pull those strings into
+the manual (for example, command options or available quoted forms).
+Some Lisp implementations make it easy to use non-standard targets to
+=documentation=; others essentially forbid it.  The =documentation*=
+and =(setf documentation*)= functions manage the nonstandard documentation
+types on platforms which do not allow it.
+#+begin_example
+\(documentation* X DOC-TYPE)
+\(setf (documentation* X DOC-TYPE) DOC-STRING)
+#+end_example
+At this time, on Allegro Lisp these functions are inlined wrappers for the
+standard =documentation= functions, and on other platforms it filters out the
+non-standard types and stores them in the =+nonstandard-doc-type+= hash.
+
+Note that when using =(setf documentation*)= to install documentation strings
+of non-standard doc-type it is necessary to load the =org-sampler= ASDF system
+as a prerequisite of the documented system.  This is in contrast to the use
+case of merely assembling documentation separately from loading the system,
+in which case there is no reason to =:depends-on= the Org-Sampler system.
+"
+  #+allegro (documentation x doc-type)
+  #-allegro (case doc-type
+              ((t function setf compiler-macro method-combination type
+                  structure variable)
+               (documentation x doc-type))
+              (otherwise
+               (multiple-value-bind (name-hash hash-supp)
+                   (gethash doc-type +nonstandard-doc-type+)
+                 (when hash-supp
+                   (gethash x name-hash))))))
+
+(defun (setf documentation*) (docstring x doc-type)
+  #+allegro (setf (documentation x doc-type) docstring)
+  #-allegro (case doc-type
+              ((t function setf compiler-macro method-combination type
+                  structure variable)
+               (documentation x doc-type))
+              (otherwise
+               (multiple-value-bind (name-hash hash-supp)
+                   (gethash doc-type +nonstandard-doc-type+)
+                 (unless hash-supp
+                   (setf name-hash (make-hash-table :test 'eq)
+                         (gethash doc-type +nonstandard-doc-type+) name-hash))
+                 (setf (gethash x name-hash) docstring)))))
+
+;;; -----------------------------------------------------------------
+
 (defun self-document ()
   "Applies =Org-Sampler= to itself in its own directory."
   (let ((path (asdf:system-relative-pathname :org-sampler "doc/")))
@@ -336,3 +402,4 @@
                          :show-package nil :hoist-exported t :section-level 3
                          :package-headers nil :usage-headers nil :show-title nil
                          :page-title "Org-Sampler")))
+

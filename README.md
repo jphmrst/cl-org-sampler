@@ -5,7 +5,7 @@ To more easily keep your documentation synchronized with the source
 code, write your Common Lisp documentation strings in Org-mode format
 and use this system to extract each symbol usage into its own separate
 Org file. Then your user manual and other documentation can just
-include these sampled extracts.  Updates to the manual can then be
+include these sampled extracts.  Updates to the manual can be
 automated from updates to the docstrings - which we're more likely to
 actually remember to do.
 
@@ -105,6 +105,25 @@ Writes Org-mode files (in the directory named by `directory-path`) documenting t
 
 -   The `index-acc` is a hash-table used to accumulate symbol references for an index page, or `nil` if no index data should be saved.
 -   This function will write a separate file for each *use* of the symbol, disambiguating the file name where necessary with `__fn`, `__var` and so forth.  If `always-disambiguate` is non-nil, then these suffixes will *always* be added to the names of the generated files, even when a symbol has only one usage.
+
+## Nonstandard documentation targets
+
+### Function `documentation*`
+
+Sometimes you may want to maintain documentation attached to
+non-standard targets in the source code, and pull those strings into
+the manual (for example, command options or available quoted forms).
+Some Lisp implementations make it easy to use non-standard targets to
+`documentation`; others essentially forbid it.  The `documentation*`
+and `(setf documentation*)` functions manage the nonstandard documentation
+types on platforms which do not allow it.
+
+    (documentation* X DOC-TYPE)
+    (setf (documentation* X DOC-TYPE) DOC-STRING)
+
+At this time, on Allegro Lisp these functions are inlined wrappers for the
+standard `documentation` functions, and on other platforms it filters out the
+non-standard types and stores them in the `+nonstandard-doc-type+` hash.
 
 ## Global switches
 

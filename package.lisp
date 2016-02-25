@@ -10,4 +10,5 @@
     (:use :common-lisp :iterate)
     (:export #:write-symbol-files #:write-package-files #:write-packages
              #:*generate-html* #:self-document #:*section-level*
-             #:*show-usage-header* #:*show-package-header* #:*show-title*))
+             #:*show-usage-header* #:*show-package-header* #:*show-title*
+             #:documentation*))

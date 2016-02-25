@@ -1,11 +1,12 @@
 #+OPTIONS: toc:nil
+#+STARTUP: showall
 
 * Use Org-mode in your Common Lisp docstrings
 To more easily keep your documentation synchronized with the source
 code, write your Common Lisp documentation strings in Org-mode format
 and use this system to extract each symbol usage into its own separate
 Org file. Then your user manual and other documentation can just
-include these sampled extracts.  Updates to the manual can then be
+include these sampled extracts.  Updates to the manual can be
 automated from updates to the docstrings - which we're more likely to
 actually remember to do.
 
@@ -14,6 +15,8 @@ Requires =iterate=.
 #+INCLUDE: "./doc/write-package-files.org"
 #+INCLUDE: "./doc/write-packages.org"
 #+INCLUDE: "./doc/write-symbol-files.org"
+** Nonstandard documentation targets
+#+INCLUDE: "./doc/documentation_.org"
 ** Global switches
 #+INCLUDE: "./doc/_section-level_.org"
 #+INCLUDE: "./doc/_show-package-header_.org"
