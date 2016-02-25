@@ -1,5 +1,13 @@
 
-# Org-Sampler - Treat Common Lisp docstrings as Org-mode
+# Use Org-mode in your Common Lisp docstrings
+
+If you write your Common Lisp documentation strings in Org-mode
+format, you can use this package to extract each symbol use into its
+own separate Org file.  Then your user manual and other documentation
+can just include these sampled extracts to more easily keep your
+documentation synchronized with the source code.
+
+Requires `iterate`.
 
 ## Main routines
 
