@@ -297,6 +297,6 @@
   "Applies =Org-Sampler= to itself in its own directory."
   (let ((path (asdf:system-relative-pathname :org-sampler "doc/")))
     (write-package-files :org-sampler :path path :index "index.org"
-                         :show-package nil :hoist-exported t :section-level 2
+                         :show-package nil :hoist-exported t :section-level 3
                          :package-headers nil :usage-headers nil :show-title nil
                          :page-title "Org-Sampler")))
