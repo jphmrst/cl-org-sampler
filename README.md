@@ -125,6 +125,12 @@ At this time, on Allegro Lisp these functions are inlined wrappers for the
 standard `documentation` functions, and on other platforms it filters out the
 non-standard types and stores them in the `+nonstandard-doc-type+` hash.
 
+Note that when using `(setf documentation*)` to install documentation strings
+of non-standard doc-type it is necessary to load the `org-sampler` ASDF system
+as a prerequisite of the documented system.  This is in contrast to the use
+case of merely assembling documentation separately from loading the system,
+in which case there is no reason to `:depends-on` the Org-Sampler system.
+
 ## Global switches
 
 ### Variable `*section-level*`

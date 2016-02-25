@@ -7,4 +7,6 @@ README.md: README.org org-sampler.asd package.lisp sampler.lisp
 		-e '(org-sampler:self-document)' \
 		-kill
 	emacs $< --eval '(org-gfm-export-to-markdown)' \
-	         --eval '(save-buffers-kill-terminal)'
+	         --eval '(org-latex-export-to-pdf)' \
+		 --eval '(save-buffers-kill-terminal)'
+	mv README.pdf OrgSampler.pdf
