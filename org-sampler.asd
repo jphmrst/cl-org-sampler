@@ -12,7 +12,7 @@
 
 (defsystem :org-sampler
     :description "Extract docstrings as Emacs org-mode files"
-    :version "0.2.0"
+    :version "0.2.1"
     :author "John Maraist <lisper@maraist.org>"
     :license "LLGPL 3.latest"
     :depends-on (:iterate)
