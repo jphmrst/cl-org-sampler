@@ -7,11 +7,11 @@
 ;;;
 
 (defpackage :org-sampler-asd
-    (:use :common-lisp :asdf)
-    (:export #:samples))
+    (:use :common-lisp :asdf))
 (in-package :org-sampler-asd)
 
 (defsystem :org-sampler
+    :description "Extract docstrings as Emacs org-mode files"
     :version "0.2.0"
     :author "John Maraist <lisper@maraist.org>"
     :license "LLGPL 3.latest"
