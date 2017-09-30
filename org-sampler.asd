@@ -6,15 +6,11 @@
 ;;; File: org-sampler.asd
 ;;;
 
-(defpackage :org-sampler-asd
-    (:use :common-lisp :asdf))
-(in-package :org-sampler-asd)
-
-(defsystem :org-sampler
+(defsystem "org-sampler"
     :description "Extract docstrings as Emacs org-mode files"
     :version "0.2.1"
     :author "John Maraist <lisper@maraist.org>"
     :license "LLGPL 3.latest"
-    :depends-on (:iterate)
+    :depends-on ("iterate")
     :components ((:file "package")      ; Lisp infrastructure.
                  (:file "sampler" :depends-on ("package"))))
